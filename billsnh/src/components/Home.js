@@ -3,59 +3,67 @@ import React from 'react';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
+import ListGroup from 'react-bootstrap/ListGroup';
 
-import { Bill } from './Bill';
-import { BillList } from './BillList';
+// The Bill component displays a selectable bill in a list
+const Bill = props => {
+    return <ListGroup.Item key={props.bill_id} active={props.selected} onClick={props.handleClick}>{props.number}: {props.title}</ListGroup.Item>
+}
+
+// The BillList component displays a list of bills
+const BillList = props => {
+    return <ListGroup>
+        <h4>{props.title}</h4>
+        {props.bills}
+    </ListGroup>
+}
+
+// The BillListCol component displays a list of bills in a column
+const BillListCol = props => {
+    return <Col><BillList title={props.title} bills={props.bills} /></Col>
+}
 
 // The Home class represents the home page
 export default class Home extends React.Component {
     constructor(props) {
         super(props);
 
+        // Bind the handleBillClick callback
         this.handleBillClick = this.handleBillClick.bind(this);
-        this.handleSelectedBillClick = this.handleSelectedBillClick.bind(this);
     }
 
+    // The handleBillClick function toggles the selected state of a bill.
     handleBillClick(bill) {
-        this.props.selectBill(bill.bill_id, true);
+        this.props.toggleBill(bill.bill_id);
     }
 
-    handleSelectedBillClick(bill) {
-        this.props.selectBill(bill.bill_id, false);
+    // isBillSelected returns true if the specified bill is selected.
+    isBillSelected(bill) {
+        return this.props.selectedBillIds.find(bill_id => bill_id === bill.bill_id);
     }
 
+    // getBillsForPrefix gets all the bills with the specified prefix in it's number
+    getBillsForPrefix(prefix) {
+        return this.props.bills.filter(bill => bill.number ? bill.number.startsWith(prefix) : false);
+    }
+
+    // Render the bills with a list of bills in each column
     render() {
-        const houseBills = this.props.bills.filter(
-            bill => bill.number ? bill.number.startsWith('HB') && !this.props.selectedBills.find(bill_id => bill_id === bill.bill_id) : false);
-        const senateBills = this.props.bills.filter(
-            bill => bill.number ? bill.number.startsWith('SB') && !this.props.selectedBills.find(bill_id => bill_id === bill.bill_id) : false);
-        const cacrBills = this.props.bills.filter(
-            bill => bill.number ? bill.number.startsWith('CACR') && !this.props.selectedBills.find(bill_id => bill_id === bill.bill_id) : false);
-        const srBills = this.props.bills.filter(
-            bill => bill.number ? bill.number.startsWith('SR') && !this.props.selectedBills.find(bill_id => bill_id === bill.bill_id) : false);
+        this.props.updateNavbarState(true, false);
 
-        const selectedBills = this.props.bills.filter(bill => this.props.selectedBills.find(bill_id => bill_id === bill.bill_id));
+        // Instantiate the lists of bills
+        const listOfHouseBills = this.getBillsForPrefix('HB').map(bill => <Bill selected={this.isBillSelected(bill)} handleClick={() => this.handleBillClick(bill)} {...bill} />);
+        const listOfSenateBills = this.getBillsForPrefix('SB').map(bill => <Bill selected={this.isBillSelected(bill)} handleClick={() => this.handleBillClick(bill)} {...bill} />);
+        const listOfCACRBills = this.getBillsForPrefix('CACR').map(bill => <Bill selected={this.isBillSelected(bill)} handleClick={() => this.handleBillClick(bill)} {...bill} />);
+        const listOfSRBills = this.getBillsForPrefix('SR').map(bill => <Bill selected={this.isBillSelected(bill)} handleClick={() => this.handleBillClick(bill)} {...bill} />);
 
-        // Instantiate a Bill object for each bill
-        const listOfHouseBills = houseBills.map(bill => <Bill handleClick={() => this.handleBillClick(bill)} {...bill} />);
-        const listOfSenateBills = senateBills.map(bill => <Bill handleClick={() => this.handleBillClick(bill)} {...bill} />);
-        const listOfCACRBills = cacrBills.map(bill => <Bill handleClick={() => this.handleBillClick(bill)} {...bill} />);
-        const listOfSRBills = srBills.map(bill => <Bill handleClick={() => this.handleBillClick(bill)} {...bill} />);
-        const listOfSelectedBills = selectedBills.map(bill => <Bill handleClick={() => this.handleSelectedBillClick(bill)} {...bill} />);
-
-        return <Container>
+        // Display each bill list in a separate column
+        return <Container fluid>
             <Row>
-                <Col>
-                    <BillList title="House Bills" bills={listOfHouseBills} />
-                </Col>
-                <Col>
-                    <BillList title="Senate Bills" bills={listOfSenateBills} />
-                    <BillList title="Constitutional Amendments" bills={listOfCACRBills} />
-                    <BillList title="SR Bills" bills={listOfSRBills} />
-                </Col>
-                <Col>
-                    <BillList title="Selected Bills" bills={listOfSelectedBills} />
-                </Col>
+                <BillListCol title="House Bills" bills={listOfHouseBills} />
+                <BillListCol title="Senate Bills" bills={listOfSenateBills} />
+                <BillListCol title="Constitutional Amendments" bills={listOfCACRBills} />
+                <BillListCol title="Session Rules" bills={listOfSRBills} />
             </Row>
         </Container>;
     }
